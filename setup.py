@@ -12,9 +12,11 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/control_actuator/launch', ['launch/ekf_launch.py']),
+        ('share/control_actuator/config', ['config/ekf.yaml']),
         (os.path.join('share', package_name), glob('launch/*.launch.py'))
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'keyboard'],
     zip_safe=True,
     maintainer='promit',
     maintainer_email='promit.mist@gmail.com',
@@ -23,7 +25,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'control_actuator_by_keyboard_executable = control_actuator.control_actuator_by_keyboard:main'
+            'control_actuator_by_keyboard_executable = control_actuator.control_actuator_by_keyboard:main',
+            'imu_visualizer_executable = control_actuator.imu_visualizer:main',
+            'kalman_position_executable = control_actuator.kalman_position:main'
         ],
     },
 )

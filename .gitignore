@@ -1,0 +1,38 @@
+# === ROS 2 build artifacts ===
+build/
+install/
+log/
+
+# === ROS 2 Python package cache ===
+*.pyc
+__pycache__/
+
+# === VSCode and editor-specific ===
+.vscode/
+.idea/
+*.swp
+
+# === ROS 2 launch logs and temporary files ===
+*.log
+*.db
+*.bak
+
+# === Environment files ===
+.env
+*.env
+
+# === ROS 2 test results ===
+test_results/
+
+# === CMake and colcon cache ===
+CMakeFiles/
+CMakeCache.txt
+colcon.meta
+
+# === Auto-generated files ===
+*.launch.pyc
+*.urdf.pyc
+*.xacro.pyc
+
+# === Misc ===
+.DS_Store
