@@ -26,8 +26,9 @@ setup(
     entry_points={
         'console_scripts': [
             'control_actuator_by_keyboard_executable = control_actuator.control_actuator_by_keyboard:main',
-            'imu_visualizer_executable = control_actuator.imu_visualizer:main',
-            'kalman_position_executable = control_actuator.kalman_position:main'
+            'control_actuator_by_IMU_executable = control_actuator.control_actuator_by_IMU:main',
+            'control_all_actuator_by_IMU_executable = control_actuator.control_all_actuator_by_IMU:main',
+            'control_all_actuator_by_IMU_2_executable = control_actuator.control_all_actuator_by_IMU_2:main',
         ],
     },
 )
