@@ -30,7 +30,6 @@ setup(
             'control_all_actuator_by_IMU_executable = control_actuator.control_all_actuator_by_IMU:main',
             'control_all_actuator_by_IMU_2_executable = control_actuator.control_all_actuator_by_IMU_2:main',
             'stewart_kinematics_node_executable = control_actuator.stewart_kinematics_node:main',
-            'stewart_kinematics_node_2_executable = control_actuator.stewart_kinematics_node_2:main',
         ],
     },
 )
