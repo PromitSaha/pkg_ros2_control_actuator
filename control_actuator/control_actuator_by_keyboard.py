@@ -2,11 +2,12 @@
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Float32
 from sensor_msgs.msg import Imu
 import sys
 import termios
 import tty
+import time
 
 def apply_deadband(val, threshold=0.1):
     return val if abs(val) > threshold else 0.0
@@ -21,6 +22,11 @@ class KeyboardActuatorController(Node):
         self.pub5 = self.create_publisher(Int32, '/actuator_command_5', 10)
         self.pub6 = self.create_publisher(Int32, '/actuator_command_6', 10)
         self.pub7 = self.create_publisher(Int32, '/actuator_command', 10)
+        self.global_current_position = 15.0
+        self.actuator_pubs = [
+            self.create_publisher(Float32, f'/target_position_{i+1}', 10)
+            for i in range(6)
+        ]
 
         self.get_logger().info("Real-time actuator control started. Press 'Ctrl+C' to exit.")
 
@@ -43,6 +49,24 @@ class KeyboardActuatorController(Node):
             self.pub7.publish(msg)
             
         self.get_logger().info(f"Actuator {actuator}: Command {value}")
+
+    def upOrDown(self, direction):
+        self.global_current_position = self.global_current_position + (direction*5)
+
+        float_msg = Float32()
+        float_msg.data = self.global_current_position
+
+        for i in [0, 1]:
+            self.actuator_pubs[i].publish(float_msg)
+            #time.sleep(0.05)
+
+        for i in [2, 3]:
+            self.actuator_pubs[i].publish(float_msg)
+            #time.sleep(0.05)
+
+        for i in [4, 5]:
+            self.actuator_pubs[i].publish(float_msg)
+            #time.sleep(0.05)
     
 def get_key():
     fd = sys.stdin.fileno()
@@ -61,8 +85,11 @@ def main():
     try:
         while True:
             key = get_key()
-
-            if key == 'q':
+            if key == "8":
+                node.upOrDown(1)
+            elif key == '2':
+                node.upOrDown(-1)
+            elif key == 'q':
                 node.send_command(1, 1)  # actuator 1 extend
             elif key == 'z':
                 node.send_command(1, -1)  # actuator 1 retract
