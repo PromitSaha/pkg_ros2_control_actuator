@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+import math
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Float64MultiArray, Float32, Int64
 import numpy as np
@@ -36,12 +37,15 @@ class StewartKinematicsNode(Node):
             for i in range(3)
         ]
 
-    def mergeTwoActuatorCommand(self, target1 target2) {
-        rounded_target1 = round(target1, 1)
-        rounded_target2 = round(target2, 1)
+    def mergeTwoActuatorCommand(self, target1, target2):
+        rounded_target1 = round(target1 * 1000, 1)
+        rounded_target2 = round(target2 * 1000, 1)
 
-        return rounded_target1*10*10000 + (rounded_target2*10)
-    }
+        mergedValue = math.floor(rounded_target1*10*10000 + (rounded_target2*10))
+        msg = Int64()
+        msg.data = mergedValue
+
+        return msg
 
     def pose_callback(self, msg):
         # Extract translation
@@ -49,12 +53,12 @@ class StewartKinematicsNode(Node):
         # Extract rotation (quaternion -> RPY)
         rotation = [msg.orientation.x, msg.orientation.y, msg.orientation.z]
 
-        platform = inv_kinematics(self.r_B, self.r_P, self.gamma_B, self.gamma_P)
+        platform = inv_kinematics()
         lengths = platform.solve(trans, rotation)
 
         
         # Publish full array
-        print(lengths)
+        #print(lengths)
         msg_out = Float64MultiArray()
         msg_out.data = lengths.tolist()
         self.length_pub.publish(msg_out)
@@ -62,15 +66,17 @@ class StewartKinematicsNode(Node):
         # Publish to each /target_position_i topic once
         target1 = self.mergeTwoActuatorCommand(lengths[0], lengths[1])
         self.actuator_pubs[0].publish(target1)
-        time.sleep(0.05)
+        time.sleep(0.1)
 
         target2 = self.mergeTwoActuatorCommand(lengths[2], lengths[3])
         self.actuator_pubs[1].publish(target2)
-        time.sleep(0.05)
+        time.sleep(0.1)
 
         target3 = self.mergeTwoActuatorCommand(lengths[4], lengths[5])
         self.actuator_pubs[2].publish(target3)
-        time.sleep(0.05)
+        time.sleep(0.1)
+
+        #print(target1, " ", target2, " ", target3)
 
 def main(args=None):
     rclpy.init(args=args)

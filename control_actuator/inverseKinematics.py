@@ -1,52 +1,28 @@
 import numpy as np
 
 class inv_kinematics:
-    def __init__(self,r_B, r_P, gamma_B, gamma_P) -> None:
-        self.home_pos= np.array([0, 0, .05]) # home position of the platform
+    def __init__(self) -> None:
+        self.home_pos= np.array([0, 0, .55]) # home position of the platform
 
         pi = np.pi
 
         ## Define the Geometry of the platform
-        # Psi_B (Polar coordinates)
-        psi_B = np.array([ 
-            -gamma_B, 
-            gamma_B,
-            2*pi/3 - gamma_B, 
-            2*pi/3 + gamma_B, 
-            2*pi/3 + 2*pi/3 - gamma_B, 
-            2*pi/3 + 2*pi/3 + gamma_B])
-
-        # psi_P (Polar coordinates)
-        # Direction of the points where the rod is attached to the platform.
-        psi_P = np.array([ 
-            pi/3 + 2*pi/3 + 2*pi/3 + gamma_P,
-            pi/3 + -gamma_P, 
-            pi/3 + gamma_P,
-            pi/3 + 2*pi/3 - gamma_P, 
-            pi/3 + 2*pi/3 + gamma_P, 
-            pi/3 + 2*pi/3 + 2*pi/3 - gamma_P])
 
         # Coordinate of the points where servo arms 
         # are attached to the corresponding servo axis.
-        beforeTranspose_B = r_B * np.array( [ 
-            [ np.cos(psi_B[0]), np.sin(psi_B[0]), 0],
-            [ np.cos(psi_B[1]), np.sin(psi_B[1]), 0],
-            [ np.cos(psi_B[2]), np.sin(psi_B[2]), 0],
-            [ np.cos(psi_B[3]), np.sin(psi_B[3]), 0],
-            [ np.cos(psi_B[4]), np.sin(psi_B[4]), 0],
-            [ np.cos(psi_B[5]), np.sin(psi_B[5]), 0] ])
-        self.B = np.transpose(beforeTranspose_B)
+        self.B = np.array([
+            [0.1202, 0.1202, 0.0440, -0.1642, -0.1642, 0.0440],
+            [-0.1202, 0.1202, 0.1642, 0.0440, -0.0440, -0.1642],
+            [0, 0, 0, 0, 0, 0]
+        ])
             
         # Coordinates of the points where the rods 
         # are attached to the platform.
-        beforeTranspose_P = r_P * np.array([ 
-            [ np.cos(psi_P[0]),  np.sin(psi_P[0]), 0],
-            [ np.cos(psi_P[1]),  np.sin(psi_P[1]), 0],
-            [ np.cos(psi_P[2]),  np.sin(psi_P[2]), 0],
-            [ np.cos(psi_P[3]),  np.sin(psi_P[3]), 0],
-            [ np.cos(psi_P[4]),  np.sin(psi_P[4]), 0],
-            [ np.cos(psi_P[5]),  np.sin(psi_P[5]), 0] ])
-        self.P = np.transpose(beforeTranspose_P)
+        self.P = np.array([
+            [0.1269, 0.1269, -0.0391, -0.0878, -0.0878, -0.0391],
+            [-0.0281, 0.0281, 0.1240, 0.0959, -0.0959, -0.1240],
+            [0, 0, 0, 0, 0, 0]
+        ])
 
     # Rotation matrices used later
     def rotX(self, theta):
@@ -75,12 +51,22 @@ class inv_kinematics:
         # R = np.matmul( np.matmul(rotZ(rotation[2]), rotY(rotation[1])), rotX(rotation[0]) )
         R = np.matmul( np.matmul(self.rotX(rotation[0]), self.rotY(rotation[1])), self.rotZ(rotation[2]) )
 
+        platform_center = trans + self.home_pos
+
         # Get leg length for each leg
         # leg = np.repeat(trans[:, np.newaxis], 6, axis=1) + np.repeat(home_pos[:, np.newaxis], 6, axis=1) + np.matmul(np.transpose(R), P) - B 
-        l = np.repeat(trans[:, np.newaxis], 6, axis=1) + np.repeat(self.home_pos[:, np.newaxis], 6, axis=1) + np.matmul(R, self.P) - self.B 
+        l = np.repeat(platform_center[:, np.newaxis], 6, axis=1) + np.matmul(R, self.P) - self.B
+
         lll = np.linalg.norm(l, axis=0)
 
         # Position of leg in global frame
         L = l + self.B
 
-        return lll
+        print("lll ", lll)
+
+        constant_value = 0.5
+        new_lll = lll - constant_value
+
+        print("new_lll ", new_lll)
+
+        return new_lll
