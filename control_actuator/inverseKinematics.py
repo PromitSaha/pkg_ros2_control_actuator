@@ -2,7 +2,7 @@ import numpy as np
 
 class inv_kinematics:
     def __init__(self) -> None:
-        self.home_pos= np.array([0, 0, .55]) # home position of the platform
+        self.home_pos= np.array([0, 0, 0.5628]) # home position of the platform
 
         pi = np.pi
 
@@ -11,16 +11,16 @@ class inv_kinematics:
         # Coordinate of the points where servo arms 
         # are attached to the corresponding servo axis.
         self.B = np.array([
-            [0.1202, 0.1202, 0.0440, -0.1642, -0.1642, 0.0440],
-            [-0.1202, 0.1202, 0.1642, 0.0440, -0.0440, -0.1642],
+            [0.0440, -0.1642, -0.1642, 0.0440, 0.1202, 0.1202],
+            [0.1642, 0.0440, -0.0440, -0.1642, -0.1202, 0.1202],
             [0, 0, 0, 0, 0, 0]
         ])
             
         # Coordinates of the points where the rods 
         # are attached to the platform.
         self.P = np.array([
-            [0.1269, 0.1269, -0.0391, -0.0878, -0.0878, -0.0391],
-            [-0.0281, 0.0281, 0.1240, 0.0959, -0.0959, -0.1240],
+            [-0.0391, -0.0878, -0.0878, -0.0391, 0.1269, 0.1269],
+            [0.1240, 0.0959, -0.0959, -0.1240, -0.0281, 0.0281],
             [0, 0, 0, 0, 0, 0]
         ])
 
@@ -53,20 +53,32 @@ class inv_kinematics:
 
         platform_center = trans + self.home_pos
 
+        angle_offset = np.deg2rad(0)  # or +30 depending on your test
+        R_offset = np.array([
+            [np.cos(angle_offset), -np.sin(angle_offset), 0],
+            [np.sin(angle_offset),  np.cos(angle_offset), 0],
+            [0, 0, 1]
+        ])
+        P_aligned = R_offset @ self.P
+
+
         # Get leg length for each leg
         # leg = np.repeat(trans[:, np.newaxis], 6, axis=1) + np.repeat(home_pos[:, np.newaxis], 6, axis=1) + np.matmul(np.transpose(R), P) - B 
         l = np.repeat(platform_center[:, np.newaxis], 6, axis=1) + np.matmul(R, self.P) - self.B
 
         lll = np.linalg.norm(l, axis=0)
 
-        # Position of leg in global frame
-        L = l + self.B
+        # Actuator specs
+        rest_length = 0.57       # in meters
+        stroke_length = 0.202    # in meters
 
-        print("lll ", lll)
+        # Convert to actuator extension: how far from rest position
+        extension = lll - rest_length
 
-        constant_value = 0.5
-        new_lll = lll - constant_value
+        # Clamp to actuator range
+        extension = np.clip(extension, 0.0, stroke_length)
 
-        print("new_lll ", new_lll)
+        print("Raw leg lengths (m):", lll)
+        print("Actuator extensions (m):", extension)
 
-        return new_lll
+        return extension
