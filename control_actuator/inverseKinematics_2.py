@@ -21,7 +21,7 @@ class inv_kinematics:
         self.P = np.array([
             [-0.0391, -0.0878, -0.0878, -0.0391, 0.1269, 0.1269],
             [0.1240, 0.0959, -0.0959, -0.1240, -0.0281, 0.0281],
-            [0, 0, 0, 0, 0, 0]
+            [0.5628, 0.5628, 0.5628, 0.5628, 0.5628, 0.5628]
         ])
 
     # Rotation matrices used later
@@ -51,7 +51,8 @@ class inv_kinematics:
         # R = np.matmul( np.matmul(rotZ(rotation[2]), rotY(rotation[1])), rotX(rotation[0]) )
         R = np.matmul( np.matmul(self.rotX(rotation[0]), self.rotY(rotation[1])), self.rotZ(rotation[2]) )
 
-        platform_center = trans + self.home_pos
+        # platform_center = trans + self.home_pos
+        platform_center = trans
 
         angle_offset = np.deg2rad(0)  # or +30 depending on your test
         R_offset = np.array([
@@ -64,7 +65,7 @@ class inv_kinematics:
 
         # Get leg length for each leg
         # leg = np.repeat(trans[:, np.newaxis], 6, axis=1) + np.repeat(home_pos[:, np.newaxis], 6, axis=1) + np.matmul(np.transpose(R), P) - B 
-        l = np.repeat(platform_center[:, np.newaxis], 6, axis=1) + np.matmul(R, self.P) - self.B
+        l = np.repeat(platform_center[:, np.newaxis], 6, axis=1) + np.matmul(R, self.P)
 
         lll = np.linalg.norm(l, axis=0)
 
@@ -76,9 +77,9 @@ class inv_kinematics:
         extension = lll - rest_length
 
         # Clamp to actuator range
-        #extension = np.clip(extension, 0.0, stroke_length)
+        extension = np.clip(extension, 0.0, stroke_length)
 
-        print("I.K 1 Raw leg lengths (m):", lll)
-        print("I.K 1 Actuator extensions (m):", extension)
+        print("I.K 2 Raw leg lengths (m):", lll)
+        print("I.K 2 Actuator extensions (m):", extension)
 
         return extension

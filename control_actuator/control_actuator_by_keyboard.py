@@ -126,6 +126,28 @@ def main():
             elif key == 'h':
                 node.send_command(6, 0)
 
+            elif key == 'p':
+                node.send_command(2, 1)
+                node.send_command(1, 1)
+                node.send_command(3, 1)
+                node.send_command(4, 1)
+                node.send_command(5, 1)
+                node.send_command(6, 1)
+            elif key == 'l':
+                node.send_command(1, 0)
+                node.send_command(2, 0)
+                node.send_command(3, 0)
+                node.send_command(4, 0)
+                node.send_command(5, 0)
+                node.send_command(6, 0)
+            elif key == ',':
+                node.send_command(1, -1)
+                node.send_command(2, -1)
+                node.send_command(3, -1)
+                node.send_command(4, -1)
+                node.send_command(5, -1)
+                node.send_command(6, -1)
+
             elif key == '1':
                 node.send_command(7, 1)
             elif key == '2':
