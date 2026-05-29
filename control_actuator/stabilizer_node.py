@@ -16,15 +16,16 @@ class StabilizerNode(Node):
         self.kp_roll = 0.5
         self.kp_pitch = 0.5
 
-        self.base_height = 0.15  # meters
+        self.base_height = 0.1  # meters
 
         # Cooldown settings
-        self.cooldown = 1.5  # seconds (publish rate limit)
+        self.cooldown = 0.1  # seconds (publish rate limit)
         self.last_correction_time = 0
 
-        self.stability_threshold = 0.05  # rad (~11.45 deg)
+        self.stability_threshold = 0.08  # 10 deg ~ 0.17 rad, 5 deg ~ 0.08 rad)
         self.last_sent_x = 0.0
         self.last_sent_y = 0.0
+        self.correction_threshold = 0.04
 
         self.subscription = self.create_subscription(Imu, '/imu_data', self.imu_callback, 10)
         self.publisher = self.create_publisher(Pose, '/desired_pose', 10)
@@ -63,7 +64,7 @@ class StabilizerNode(Node):
         delta_x = abs(correction_x - self.last_sent_x)
         delta_y = abs(correction_y - self.last_sent_y)
 
-        if delta_x < 0.09 and delta_y < 0.09:
+        if delta_x < self.correction_threshold and delta_y < self.correction_threshold:
             self.get_logger().info("⚠️ Correction too small. Skipping.")
             return
 

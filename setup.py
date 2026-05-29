@@ -27,6 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             'control_actuator_by_keyboard_executable = control_actuator.control_actuator_by_keyboard:main',
+            'control_platform_by_keyboard_executable = control_actuator.control_platform_by_keyboard:main',
             'control_actuator_by_IMU_executable = control_actuator.control_actuator_by_IMU:main',
             'control_all_actuator_by_IMU_executable = control_actuator.control_all_actuator_by_IMU:main',
             'control_all_actuator_by_IMU_2_executable = control_actuator.control_all_actuator_by_IMU_2:main',

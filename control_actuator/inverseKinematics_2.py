@@ -77,7 +77,7 @@ class inv_kinematics:
         extension = lll - rest_length
 
         # Clamp to actuator range
-        extension = np.clip(extension, 0.0, stroke_length)
+        #extension = np.clip(extension, 0.0, stroke_length)
 
         print("I.K 2 Raw leg lengths (m):", lll)
         print("I.K 2 Actuator extensions (m):", extension)

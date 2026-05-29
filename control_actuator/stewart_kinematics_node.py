@@ -4,7 +4,7 @@ import math
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Float64MultiArray, Float32, Int64
 import numpy as np
-import transforms3d.euler
+#import transforms3d.euler
 import time
 from .inverseKinematics import inv_kinematics
 
@@ -18,6 +18,8 @@ class StewartKinematicsNode(Node):
         self.gamma_B = .2269   # Base anchor pair angle
         self.gamma_P = .82   # Platform anchor pair angle
         self.home_pos = np.array([0, 0, 0.457])  # Neutral height in meters
+        self.min_extension = 0.0
+        self.max_extension = 0.202
 
         self.pose_sub = self.create_subscription(
             Pose,
@@ -56,27 +58,29 @@ class StewartKinematicsNode(Node):
         platform = inv_kinematics()
         lengths = platform.solve(trans, rotation)
 
-        
-        # Publish full array
-        #print(lengths)
-        msg_out = Float64MultiArray()
-        msg_out.data = lengths.tolist()
-        self.length_pub.publish(msg_out)
+        if np.all((lengths >= self.min_extension) & (lengths <= self.max_extension)):
+            # Publish full array
+            #print(lengths)
+            msg_out = Float64MultiArray()
+            msg_out.data = lengths.tolist()
+            self.length_pub.publish(msg_out)
 
-        # Publish to each /target_position_i topic once
-        target1 = self.mergeTwoActuatorCommand(lengths[0], lengths[1])
-        self.actuator_pubs[0].publish(target1)
-        time.sleep(0.1)
+            # Publish to each /target_position_i topic once
+            target1 = self.mergeTwoActuatorCommand(lengths[0], lengths[1])
+            self.actuator_pubs[0].publish(target1)
+            time.sleep(0.1)
 
-        target2 = self.mergeTwoActuatorCommand(lengths[2], lengths[3])
-        self.actuator_pubs[1].publish(target2)
-        time.sleep(0.1)
+            target2 = self.mergeTwoActuatorCommand(lengths[2], lengths[3])
+            self.actuator_pubs[1].publish(target2)
+            time.sleep(0.1)
 
-        target3 = self.mergeTwoActuatorCommand(lengths[4], lengths[5])
-        self.actuator_pubs[2].publish(target3)
-        time.sleep(0.1)
+            target3 = self.mergeTwoActuatorCommand(lengths[4], lengths[5])
+            self.actuator_pubs[2].publish(target3)
+            time.sleep(0.1)
 
-        #print(target1, " ", target2, " ", target3)
+            #print(target1, " ", target2, " ", target3)
+        else:
+            print("Out of workspace")
 
 def main(args=None):
     rclpy.init(args=args)
