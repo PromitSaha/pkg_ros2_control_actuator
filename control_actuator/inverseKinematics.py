@@ -1,84 +1,81 @@
 import numpy as np
 
-class inv_kinematics:
-    def __init__(self) -> None:
-        self.home_pos= np.array([0, 0, 0.5628]) # home position of the platform
 
-        pi = np.pi
+class StewartPlatformIK:
+    """Inverse kinematics for a six-actuator Stewart platform.
 
-        ## Define the Geometry of the platform
+    Coordinates and distances are in metres. ``translation`` is an offset from
+    the neutral platform centre and ``quaternion`` uses ROS ordering (x, y, z,
+    w). The result is actuator extension from the retracted length in metres.
+    """
 
-        # Coordinate of the points where servo arms 
-        # are attached to the corresponding servo axis.
-        self.B = np.array([
+    def __init__(self):
+        self.home_position = np.array([0.0, 0.0, 0.5628])
+        self.retracted_length = 0.570
+        self.stroke_length = 0.202
+
+        # Base attachment points expressed in the fixed base frame.
+        self.base_points = np.array([
             [0.0440, -0.1642, -0.1642, 0.0440, 0.1202, 0.1202],
             [0.1642, 0.0440, -0.0440, -0.1642, -0.1202, 0.1202],
-            [0, 0, 0, 0, 0, 0]
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         ])
-            
-        # Coordinates of the points where the rods 
-        # are attached to the platform.
-        self.P = np.array([
+
+        # Platform attachment points expressed relative to its centre.
+        self.platform_points = np.array([
             [-0.0391, -0.0878, -0.0878, -0.0391, 0.1269, 0.1269],
             [0.1240, 0.0959, -0.0959, -0.1240, -0.0281, 0.0281],
-            [0, 0, 0, 0, 0, 0]
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         ])
 
-    # Rotation matrices used later
-    def rotX(self, theta):
-        rotx = np.array([
-            [1,     0    ,    0    ],
-            [0,  np.cos(theta), -np.sin(theta)],
-            [0,  np.sin(theta), np.cos(theta)] ])
-        return rotx
+    @staticmethod
+    def quaternion_to_matrix(quaternion):
+        quaternion = np.asarray(quaternion, dtype=float)
+        if quaternion.shape != (4,):
+            raise ValueError('Quaternion must contain x, y, z, and w')
+        if not np.all(np.isfinite(quaternion)):
+            raise ValueError('Quaternion must contain only finite values')
 
-    def rotY(self, theta):    
-        roty = np.array([
-            [np.cos(theta), 0,  np.sin(theta) ],
-            [0         , 1,     0       ],
-            [-np.sin(theta), 0,  np.cos(theta) ] ])   
-        return roty
+        magnitude = np.linalg.norm(quaternion)
+        if magnitude < 1e-12:
+            raise ValueError('Quaternion magnitude must be nonzero')
+        if not np.isclose(magnitude, 1.0, atol=1e-3):
+            raise ValueError(
+                'Quaternion must have unit magnitude; include a valid w value'
+            )
 
-    def rotZ(self, theta):    
-        rotz = np.array([
-            [ np.cos(theta),-np.sin(theta), 0 ],
-            [ np.sin(theta), np.cos(theta), 0 ],
-            [   0        ,     0      , 1 ] ])   
-        return rotz
-    
-    def solve(self, trans, rotation):
-        # Get rotation matrix of platform. RotZ* RotY * RotX -> matmul
-        # R = np.matmul( np.matmul(rotZ(rotation[2]), rotY(rotation[1])), rotX(rotation[0]) )
-        R = np.matmul( np.matmul(self.rotX(rotation[0]), self.rotY(rotation[1])), self.rotZ(rotation[2]) )
-
-        platform_center = trans + self.home_pos
-
-        angle_offset = np.deg2rad(0)  # or +30 depending on your test
-        R_offset = np.array([
-            [np.cos(angle_offset), -np.sin(angle_offset), 0],
-            [np.sin(angle_offset),  np.cos(angle_offset), 0],
-            [0, 0, 1]
+        x, y, z, w = quaternion / magnitude
+        return np.array([
+            [1.0 - 2.0*(y*y + z*z), 2.0*(x*y - z*w),
+             2.0*(x*z + y*w)],
+            [2.0*(x*y + z*w), 1.0 - 2.0*(x*x + z*z),
+             2.0*(y*z - x*w)],
+            [2.0*(x*z - y*w), 2.0*(y*z + x*w),
+             1.0 - 2.0*(x*x + y*y)],
         ])
-        P_aligned = R_offset @ self.P
+
+    def leg_lengths(self, translation, quaternion):
+        translation = np.asarray(translation, dtype=float)
+        if translation.shape != (3,):
+            raise ValueError('Translation must contain x, y, and z')
+        if not np.all(np.isfinite(translation)):
+            raise ValueError('Translation must contain only finite values')
+
+        rotation = self.quaternion_to_matrix(quaternion)
+        platform_center = self.home_position + translation
+
+        # Vector from each base joint to its corresponding platform joint:
+        # L_i = T + R * P_i - B_i
+        leg_vectors = (
+            platform_center[:, np.newaxis]
+            + rotation @ self.platform_points
+            - self.base_points
+        )
+        return np.linalg.norm(leg_vectors, axis=0)
+
+    def solve(self, translation, quaternion):
+        return self.leg_lengths(translation, quaternion) - self.retracted_length
 
 
-        # Get leg length for each leg
-        # leg = np.repeat(trans[:, np.newaxis], 6, axis=1) + np.repeat(home_pos[:, np.newaxis], 6, axis=1) + np.matmul(np.transpose(R), P) - B 
-        l = np.repeat(platform_center[:, np.newaxis], 6, axis=1) + np.matmul(R, self.P) - self.B
-
-        lll = np.linalg.norm(l, axis=0)
-
-        # Actuator specs
-        rest_length = 0.57       # in meters
-        stroke_length = 0.202    # in meters
-
-        # Convert to actuator extension: how far from rest position
-        extension = lll - rest_length
-
-        # Clamp to actuator range
-        #extension = np.clip(extension, 0.0, stroke_length)
-
-        print("I.K 1 Raw leg lengths (m):", lll)
-        print("I.K 1 Actuator extensions (m):", extension)
-
-        return extension
+# Backward-compatible name for other code in this package.
+inv_kinematics = StewartPlatformIK

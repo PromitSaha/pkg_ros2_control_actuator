@@ -17,7 +17,7 @@ setup(
         (os.path.join('share', package_name), glob('launch/*.launch.py')),
         ('share/control_actuator/launch', glob('launch/*.py')),
     ],
-    install_requires=['setuptools', 'keyboard'],
+    install_requires=['setuptools', 'keyboard', 'pyserial'],
     zip_safe=True,
     maintainer='promit',
     maintainer_email='promit.mist@gmail.com',
