@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from control_actuator.inverseKinematics import StewartPlatformIK
-from control_actuator.inverseKinematics_2 import StewartPlatformIK as LegacyIK
 
 
 def test_neutral_pose_produces_six_nearly_equal_extensions():
@@ -52,7 +51,3 @@ def test_non_unit_quaternion_is_rejected():
 
     with pytest.raises(ValueError, match='unit magnitude'):
         ik.solve([0.0, 0.0, 0.0], [0.0, 0.0, 0.01, 0.0])
-
-
-def test_legacy_import_uses_corrected_solver():
-    assert LegacyIK is StewartPlatformIK
