@@ -14,7 +14,7 @@ class StewartKinematicsNode(Node):
         self.min_extension = 0.0
         self.max_extension = self.kinematics.stroke_length
 
-        self.declare_parameter('serial_port', '/dev/ttyACM0')
+        self.declare_parameter('serial_port', '/dev/teensy-motion')
         self.declare_parameter('baud_rate', 115200)
         serial_port = self.get_parameter('serial_port').value
         baud_rate = self.get_parameter('baud_rate').value
